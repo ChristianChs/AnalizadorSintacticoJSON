@@ -13,22 +13,48 @@ El analizador sintáctico JSON tiene como objetivo interpretar y validar archivo
 ## Requisitos 
 Antes de compilar el proyecto, asegúrate de tener instalados los siguientes paquetes en tu sistema:
 
-- **Flex**: Herramienta para generación de analizadores léxicos.
-- **Bison**: Herramienta para generación de analizadores sintácticos.
-- **gcc**: Compilador de C.
+- [**Flex**](source/flex-2.5.4.exe): Herramienta para generación de analizadores léxicos.
+- [**Bison**](source/bison-2.4.1.exe): Herramienta para generación de analizadores sintácticos.
+- [**MinGW**](https://sourceforge.net/projects/mingw/): Compilador de C. (gcc v6.3.0-1 versión usada en este proyecto)
 
 Configurar en la variable de entorno PATH : 
 - C:\GnuWin32\bin
+- C:\MinGW\bin
 
 
 ## Instrucciones de Compilación
 
+#### 1. Generación del Analizador Sintáctico con Bison
 ```bash
 bison -d json_parser.y
+```
+`bison`: Es la herramienta que convierte las gramáticas especificadas en el archivo .y en un analizador sintáctico en C.
+
+`d` : Esto indica a Bison que genere un archivo de encabezado (json_parser.tab.h) que contiene definiciones para los tokens.
+
+`json_parser.y` : Es el archivo de entrada que contiene las reglas de la gramática para el analizador sintáctico.
+
+#### 2. Generación del Analizador Léxico con Flex
+```bash
 flex json_lexer.l
+```
+`flex`: Es la herramienta que convierte las reglas léxicas especificadas en el archivo .l en un analizador léxico en C.
+
+`json_lexer.l` : Es el archivo de entrada que contiene las reglas para el analizador léxico.
+
+#### 3. Compilación y Enlace con GCC
+```bash
 gcc -o json_parser json_parser.tab.c lex.yy.c -lfl
 ```
--d : Esto indica que Bison debe generar el archivo de encabezado
+`gcc`: Es el compilador de C.
+
+`-o json_parser` :  Indica que el nombre del ejecutable generado será json_parser.
+
+`json_parser.tab.c` :  Es el archivo de código C generado por Bison.
+
+`lex.yy.c` :  Es el archivo de código C generado por Flex.
+
+`-lfl` :  Indica al enlazador que utilice la biblioteca fl, que es la biblioteca Flex, necesaria para resolver dependencias del analizador léxico.
 
 ## Bibliotecas auxiliares
 
@@ -44,15 +70,15 @@ Si ocurre problemas con -lfl:
 Probablemente se encuentre en C:\GnuWin32\lib y GCC no lo reconoce, para solucionar esto debemos asegurarnos que el enlazador MinGW pueda encontrar esta biblioteca.
 - Agregar el Directorio de Bibliotecas a LIBRARY_PATH desde CMD
     ```bash
-        set LIBRARY_PATH=%LIBRARY_PATH%;C:\GnuWin32\lib
+    set LIBRARY_PATH=%LIBRARY_PATH%;C:\GnuWin32\lib
     ```
 - Verificar que el Directorio está en LIBRARY_PATH
     ```bash
-        echo %LIBRARY_PATH%
+    echo %LIBRARY_PATH%
     ```
 - Actualizar la Variable PATH
     ```bash
-        set PATH=%PATH%;C:\GnuWin32\bin
+    set PATH=%PATH%;C:\GnuWin32\bin
     ```
 - Opcional***
 
