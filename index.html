@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/night.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h2>Analizador Sintáctico JSON</h2>
+				</section>
+				<section>
+					<section data-auto-animate>
+						<h3>Construcción de un compilador con Lex y Yacc</h3>
+					</section>
+					<section data-auto-animate>
+						<h3>Construcción de un compilador con Lex y Yacc</h3>
+						<img data-src="assets/estructura.png">
+					</section>
+				</section>
+				<section>
+					<section data-auto-animate>
+						<h3>Definición del Analizador Léxico para JSON</h3>
+					</section>
+					<section data-auto-animate>
+						<h3>Definición del Analizador Léxico para JSON</h3>
+						<pre>
+							<code data-line-numbers="1-8|10-24|26-30">
+%{
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include "json_parser.tab.h"
+	void yyerror(const char *s);
+%}
+
+%%
+[ \t\n]
+"true"                { return TRUE; }
+"false"               { return FALSE; }
+"null"                { return NULL_TOKEN; }
+\"[^"]*\"             { yylval.str = strdup(yytext); return STRING; }
+[-]?[0-9]+(\.[0-9]+)? { yylval.num = atof(yytext); return NUMBER; }
+"{"                   { return OPEN_BRACE; }
+"}"                   { return CLOSE_BRACE; }
+"["                   { return OPEN_BRACKET; }
+"]"                   { return CLOSE_BRACKET; }
+":"                   { return COLON; }
+","                   { return COMMA; }
+.                     { yyerror("Caracter invalidos"); }
+%%
+
+int yywrap()
+{
+	return 1;
+}
+							</code>
+						</pre>
+					</section>
+					
+				</section>
+				<section>
+					<section data-auto-animate>
+						<h3>Definición del Analizador Sintáctico para JSON</h3>
+					</section>
+					<section data-auto-animate>
+						<h3>Definición del Analizador Sintáctico para JSON</h3>
+						<pre>
+							<code style="max-height: 500px;" data-line-numbers="1-12|14-18|20-25|27-40|40-50|52-59|61-73|75-82|83-97|99-111">
+%{
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	extern int yylex();
+	extern int yyparse();
+	extern FILE *yyin;
+	extern char* yytext;
+	int errorPrinted = 0;
+	void yyerror(const char *detail);
+%}
+
+%union
+{
+	int num;
+	char *str;
+}
+
+%token TRUE FALSE NULL_TOKEN
+%token STRING NUMBER
+%token OPEN_BRACE CLOSE_BRACE OPEN_BRACKET CLOSE_BRACKET COLON COMMA
+%type <num> NUMBER
+%type <str> STRING
+%start json
+
+%%
+json:       value { printf("\n\t\t\t----> Sintaxis correcta\n\t\t\t----> JSON es valido!\n"); }
+			;
+value:      STRING
+			| NUMBER
+			| TRUE
+			| FALSE
+			| NULL_TOKEN
+			| object
+			| array
+			;
+object:     OPEN_BRACE members CLOSE_BRACE
+			;
+members:    pair
+			| pair COMMA members
+			;
+pair:       STRING COLON value
+			;
+array:      OPEN_BRACKET elements CLOSE_BRACKET
+			;
+elements:   value
+			| value COMMA elements
+			;
+%%
+
+void yyerror(const char *detail) {
+	if (!errorPrinted) {
+		// Detalle del error
+		printf("\t\t\t----> Error: %s\n", detail);
+		printf("\t\t\t----> Caracter inesperado o faltante cerca de: '%s'\n\n", yytext);
+		errorPrinted = 1;
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	if (argc < 2)
+	{
+		fprintf(stderr, "Uso: %s <archivo_entrada>\n", argv[0]);
+		return 1;
+	}
+	yyin = fopen(argv[1], "r");
+	if (!yyin)
+	{
+		perror(argv[1]);
+		return 1;
+	}
+	
+	printf("\n\n");
+	printf("\t\t\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+	printf("\t\t\t+                                                             +\n");
+	printf("\t\t\t+                       Analizador de JSON                    +\n");
+	printf("\t\t\t+                                                             +\n");
+	printf("\t\t\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n");
+
+	printf("\t\t\t************** Contenido del archivo de entrada **************\n\n");
+	int ch;
+	int indentation = 28;
+	int isFirstCharacter = 1;
+	while ((ch = fgetc(yyin)) != EOF) {
+		if (isFirstCharacter) {
+		for (int i = 0; i < indentation; ++i) {
+			putchar(' ');
+		}
+		isFirstCharacter = 0;
+		}
+		putchar(ch);
+		if (ch == '\n') {
+		isFirstCharacter = 1;
+		}
+	}
+
+	rewind(yyin);
+	
+	printf("\n");
+	printf("\t\t\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+	printf("\t\t\t+                                                             +\n");
+	printf("\t\t\t+                      Resultado del Analisis                 +\n");
+	printf("\t\t\t+                                                             +\n");
+	printf("\t\t\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n");
+	yyparse();
+	fclose(yyin);
+	printf("\n\n\n");
+	return 0;
+}
+							</code>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section data-auto-animate style="top: 5px;">
+						<h3>Resultado esperado JSON VÁLIDO</h3>
+					</section>
+					<section data-auto-animate style="top: 5px;">
+						<h3>Resultado esperado JSON VÁLIDO</h3>
+						<pre>
+							<code style="max-height: 500px;" data-line-numbers="1-19|19-38">
+								+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+								+                                                             +
+								+                       Analizador de JSON                    +
+								+                                                             +
+								+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		
+								************** Contenido del archivo de entrada **************
+		
+									{
+										"curso": "Compiladores",
+										"semestre": 5,
+										"estudiantes": [
+											{
+												"nombre": "Christian Choque",
+												"id": 78451545
+											},
+											{
+												"nombre": "Alex Flores",
+												"id": 78451545
+											},
+											{
+												"nombre": "Alexis Flores",
+												"id": 78451545
+											}
+										]
+									}
+								+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+								+                                                             +
+								+                      Resultado del Analisis                 +
+								+                                                             +
+								+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		
+		
+								----> Sintaxis correcta
+								----> JSON es valido!
+
+
+							</code>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section data-auto-animate style="top: 5px;">
+						<h3>Resultado esperado JSON NO VÁLIDO</h3>
+					</section>
+					<section data-auto-animate style="top: 5px;">
+						<h3>Resultado esperado JSON NO VÁLIDO</h3>
+						<pre>
+							<code style="max-height: 500px;" data-line-numbers="1-19|19-39">
+                        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        +                                                             +
+                        +                       Analizador de JSON                    +
+                        +                                                             +
+                        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        ************** Contenido del archivo de entrada *************
+                            {
+                                "curso": "Compiladores",
+                                "semestre": 5,
+                                "estudiantes": [
+                                    {
+                                        "nombre": "Christian Choque",
+                                        "id": 78451545
+                                    },
+                                    {
+                                        "nombre": "Alex Flores",
+                                        "id": 78451545
+                                    }
+                                    {
+                                        "nombre": "Alexis Flores",
+                                        "id": 78451545
+                                    }
+                                ]
+                            }
+						
+                        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        +                                                             +
+                        +                      Resultado del Analisis                 +
+                        +                                                             +
+                        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+						
+                        ----> Error: syntax error
+                        ----> Caracter inesperado o faltante cerca de: '{'
+
+
+							</code>
+						</pre>
+					</section>
+				</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+				width: window.innerWidth,
+				
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
