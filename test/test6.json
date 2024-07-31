@@ -1,0 +1,20 @@
+{
+    "curso": "Compiladores",
+    "disponible": TRUE,
+    "completado": false,
+    "revisado": null,
+    "estudiantes": [
+        {
+            "nombre": "Christian Choque",
+            "id": 78451545
+        },
+        {
+            "nombre": "Alex Flores",
+            "id": 78451545
+        }
+        {
+            "nombre": "Alexis Flores",
+            "id": 78451545
+        }
+    ]
+}

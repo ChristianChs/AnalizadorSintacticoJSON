@@ -1,0 +1,4 @@
+*.exe
+json_parser.tab.c
+json_parser.tab.h
+lex.yy.c

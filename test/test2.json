@@ -1,0 +1,22 @@
+{
+    "curso": "Compiladores",
+    "detalles": {
+        "semestre": 2,
+        "profesor": "Ing. Silvana C.",
+        "creditos": 4
+    },
+    "estudiantes": [
+        {
+            "nombre": "Christian Choque",
+            "id": 78451545
+        },
+        {
+            "nombre": "Alex Flores",
+            "id": 78451545
+        },
+        {
+            "nombre": "Alexis Flores",
+            "id": 78451545
+        }
+    ]
+}

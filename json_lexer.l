@@ -1,21 +1,28 @@
 %{
-#include "json_parser.tab.h"
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include "json_parser.tab.h"
+    void yyerror(const char *s);
 %}
 
 %%
-
-\"([^\\\n]|\\["\\/bfnrt]|\\u[0-9a-fA-F]{4})*\"    { return STRING; }
--?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?   { return NUMBER; }
-"true"                                           { return TRUE; }
-"false"                                          { return FALSE; }
-"null"                                           { return NULL_VALUE; }
-[ \t\n\r]+                                       { /* ignorar espacios en blanco */ }
-"{"                                              { return '{'; }
-"}"                                              { return '}'; }
-"["                                              { return '['; }
-"]"                                              { return ']'; }
-":"                                              { return ':'; }
-","                                              { return ','; }
-.                                                { printf("Carácter inesperado: %s\n", yytext); }
-
+[ \t\n]
+"true"                  { return TRUE; }
+"false"                 { return FALSE; }
+"null"                  { return NULL_TOKEN; }
+\"[^"]*\"               { yylval.str = strdup(yytext); return STRING; }
+[-]?[0-9]+(\.[0-9]+)?   { yylval.num = atof(yytext); return NUMBER; }
+"{"                     { return OPEN_BRACE; }
+"}"                     { return CLOSE_BRACE; }
+"["                     { return OPEN_BRACKET; }
+"]"                     { return CLOSE_BRACKET; }
+":"                     { return COLON; }
+","                     { return COMMA; }
+.                       { yyerror("Caracter invalidos"); }
 %%
+
+int yywrap()
+{
+    return 1;
+}
